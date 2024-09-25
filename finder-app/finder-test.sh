@@ -18,7 +18,7 @@ then
 		echo "Using default value ${NUMFILES} for number of files to write"
 	else
 		NUMFILES=$1
-	fi	
+	fi
 else
 	NUMFILES=$1
 	WRITESTR=$2
@@ -56,8 +56,10 @@ for i in $( seq 1 $NUMFILES)
 do
 	./writer.sh "$WRITEDIR/${username}$i.txt" "$WRITESTR"
 done
+echo 'file created'
 
 OUTPUTSTRING=$(./finder.sh "$WRITEDIR" "$WRITESTR")
+echo "$OUTPUTSTRING"
 
 # remove temporary directories
 rm -rf /tmp/aeld-data
