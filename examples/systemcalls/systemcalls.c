@@ -1,4 +1,12 @@
 #include "systemcalls.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
+#include <stdarg.h>
+#include <stdbool.h>
+#include <fcntl.h>
 
 /**
  * @param cmd the command to execute with system()
@@ -16,8 +24,13 @@ bool do_system(const char *cmd)
  *   and return a boolean true if the system() call completed with success
  *   or false() if it returned a failure
 */
+    int return_value = system(cmd);
 
-    return true;
+    if (0 == return_value) {
+        return true;
+    } else {
+        return false;
+    }
 }
 
 /**
@@ -58,10 +71,33 @@ bool do_exec(int count, ...)
  *   as second argument to the execv() command.
  *
 */
-
     va_end(args);
 
-    return true;
+	pid_t pid = fork(); // 创建子进程
+
+    if (pid == -1) {
+        // fork失败
+        perror("fork failed");
+        return 0; // 返回false
+    } else if (pid == 0) {
+        // 子进程
+        execv(command[0], command); // 执行命令
+        // 如果execv返回，说明执行失败
+        perror("execv failed");
+        exit(EXIT_FAILURE); // 子进程退出
+    } else {
+        // 父进程
+        int status;
+        waitpid(pid, &status, 0); // 等待子进程结束
+
+        if (WIFEXITED(status)) {
+            // 子进程正常结束
+            return WEXITSTATUS(status) == 0 ? 1 : 0; // 如果退出状态为0，则返回true，否则返回false
+        } else {
+            // 子进程异常结束
+            return 0; // 返回false
+        }
+	}
 }
 
 /**
@@ -94,6 +130,46 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
 */
 
     va_end(args);
+    // 执行命令
+    pid_t pid = fork();
+    if (pid == -1) {
+        // fork失败
+        perror("fork failed");
+        return false;
+    } else if (pid == 0) {
+        // 子进程, 需要在fork()调用前执行打开文件操作吗？为什么？
+        // 打开文件output.txt用于写入，如果文件不存在则创建它
+        int fd = open(outputfile, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+        if (fd == -1) {
+            perror("open failed");
+            exit(EXIT_FAILURE);
+        }
 
+        // 重定向标准输出到文件
+        if (dup2(fd, STDOUT_FILENO) == -1) {
+            perror("dup2 failed");
+            close(fd);
+            exit(EXIT_FAILURE);
+        }
+        close(fd); // 关闭文件描述符，因为已经使用dup2复制了
+
+        // 执行命令
+        execv(command[0], command);
+        // 如果execvp返回，说明执行失败
+        perror("execvp failed");
+        exit(EXIT_FAILURE);
+    } else {
+        // 父进程
+        int status;
+        waitpid(pid, &status, 0); // 等待子进程结束
+
+        if (WIFEXITED(status)) {
+            // 子进程正常结束
+            return WEXITSTATUS(status) == 0; // 如果退出状态为0，则返回true
+        } else {
+            // 子进程异常结束
+            return false;
+        }
+    }
     return true;
 }
