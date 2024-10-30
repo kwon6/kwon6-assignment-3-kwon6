@@ -12,7 +12,8 @@ BUSYBOX_VERSION=1_33_1
 FINDER_APP_DIR=$(realpath $(dirname $0))
 ARCH=arm64
 CROSS_COMPILE=aarch64-none-linux-gnu-
-TC_DIR=/home/ubuntu/workspace/coursera/toolchain/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-linux-gnu/aarch64-none-linux-gnu
+TC_BIN_DIR=$(dirname $(which aarch64-none-linux-gnu-gcc) )
+TC_LIBC_DIR="${TC_BIN_DIR}/../aarch64-none-linux-gnu/libc/"
 BUILD_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}"   )" && pwd   )"
 
 if [ $# -lt 1 ]
@@ -40,7 +41,7 @@ if [ ! -e ${OUTDIR}/linux-stable/arch/${ARCH}/boot/Image ]; then
     make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} mrproper
     make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} defconfig
     make -j2 ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} all
-    make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} modules
+    # make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} modules
     make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} dtbs
 
 fi
@@ -87,11 +88,11 @@ ${CROSS_COMPILE}readelf -a bin/busybox | grep "program interpreter"
 ${CROSS_COMPILE}readelf -a bin/busybox | grep "Shared library"
 
 # TODO: Add library dependencies to rootfs
-cd ${TC_DIR}
-cp libc/lib/ld-linux-aarch64.so.1 ${ML_ROOT_DIR}/lib/
-cp libc/lib64/libc.so.6 ${ML_ROOT_DIR}/lib64/
-cp libc/lib64/libresolv.so.2 ${ML_ROOT_DIR}/lib64/
-cp libc/lib64/libm.so.6 ${ML_ROOT_DIR}/lib64/
+cd ${TC_LIBC_DIR}
+cp lib/ld-linux-aarch64.so.1 ${ML_ROOT_DIR}/lib/
+cp lib64/libc.so.6 ${ML_ROOT_DIR}/lib64/
+cp lib64/libresolv.so.2 ${ML_ROOT_DIR}/lib64/
+cp lib64/libm.so.6 ${ML_ROOT_DIR}/lib64/
 
 # TODO: Make device nodes
 cd ${ML_ROOT_DIR}
