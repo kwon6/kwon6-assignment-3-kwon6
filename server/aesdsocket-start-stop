@@ -20,20 +20,12 @@ DAEMON_NAME="aesdsocket"
 # Daemon PID file location
 PIDFILE="/var/run/${DAEMON_NAME}.pid"
 
-. /lib/lsb/init-functions
-
 start() {
-    log_daemon_msg "Starting $DAEMON_NAME"
     start-stop-daemon --start --quiet --background --make-pidfile --pidfile $PIDFILE --exec $DAEMON_PATH -- $DAEMON_OPTS
-    status=$?
-    log_end_msg $status
 }
 
 stop() {
-    log_daemon_msg "Stopping $DAEMON_NAME"
     start-stop-daemon --stop --quiet --pidfile $PIDFILE --signal TERM
-    status=$?
-    log_end_msg $status
 }
 
 case "$1" in
